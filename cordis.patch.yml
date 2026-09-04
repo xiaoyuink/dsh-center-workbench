@@ -1,0 +1,7 @@
+# dsh-center-workbench bundle patch: mount the plugin row.
+# This plugin is standalone: it renders its own centered file-browse panel
+# and provides the '/api/dsh-center-workbench/*' HTTP routes through the host
+# half. It does NOT depend on or modify dsh-better-sidebar.
+- insert:
+    - id: dsh-center-workbench
+      name: 'dsh-center-workbench'

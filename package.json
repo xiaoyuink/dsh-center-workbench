@@ -1,0 +1,41 @@
+{
+  "name": "dsh-center-workbench",
+  "version": "0.2.0",
+  "description": "独立中部栏工作台插件：在 DSH 窗口正中央渲染文件浏览工作台（资源管理器 + 预览/编辑 + 浏览器 + 真实终端 + 后台任务），并把对话栏向面板右侧推开。侧边栏导航（生图插件按钮下方）提供『中部栏』开关；支持 Windows（盘符切换/路径归一化/终端 cmd）与跨平台文件互通（拖放导入、导出到文件夹）。不依赖、不改动 dsh-better-sidebar。",
+  "type": "module",
+  "main": "./lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./client": "./lib/client.js",
+    "./cordis.patch.yml": "./cordis.patch.yml",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib",
+    "cordis.patch.yml",
+    "README.md"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-primitives"
+      ]
+    }
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "^4.0.1",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "dependencies": {
+    "@xterm/addon-fit": "^0.11.0",
+    "@xterm/xterm": "^5.5.0",
+    "node-pty": "^1.1.0",
+    "ws": "^8.18.0"
+  },
+  "license": "MIT"
+}

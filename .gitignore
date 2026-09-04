@@ -1,0 +1,19 @@
+# 依赖
+node_modules/
+
+# 构建/缓存产物
+dist/
+lib/*.map
+*.tsbuildinfo
+*.log
+pnpm-debug.log*
+
+# 本地测试草稿
+ws-pty-test.mjs
+
+# 系统/编辑器
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
