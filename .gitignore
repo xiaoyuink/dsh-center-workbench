@@ -7,6 +7,8 @@ lib/*.map
 *.tsbuildinfo
 *.log
 pnpm-debug.log*
+# 打包产物（仅用于 Release 资产，不入库）
+*.tgz
 
 # 本地测试草稿
 ws-pty-test.mjs
