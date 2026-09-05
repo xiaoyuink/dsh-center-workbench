@@ -1,6 +1,6 @@
 {
   "name": "dsh-center-workbench",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "独立中部栏工作台插件：在 DSH 窗口正中央渲染文件浏览工作台（资源管理器 + 预览/编辑 + 浏览器 + 真实终端 + 后台任务），并把对话栏向面板右侧推开。侧边栏导航（生图插件按钮下方）提供『中部栏』开关；支持 Windows（盘符切换/路径归一化/终端 cmd）与跨平台文件互通（拖放导入、导出到文件夹）。不依赖、不改动 dsh-better-sidebar。",
   "type": "module",
   "main": "./lib/index.js",
