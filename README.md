@@ -13,7 +13,7 @@
 
 ## 功能总览
 
-- **资源管理器**：文件树导航、面包屑、多选（Ctrl/Shift）、右键菜单、复制/剪切/粘贴/删除/重命名/新建、目录自动刷新轮询；**Windows 下支持盘符切换**（工具栏下拉选 `C:`/`D:`/… 即可浏览其它盘）。
+- **资源管理器**：**VS Code 风格目录树**——文件夹带 ▸/▾ 箭头：**单击文件夹行 = 进入该文件夹**，**单击 ▸ 箭头 = 原地展开/收起**（懒加载 + 已加载目录轮询刷新）、层级缩进、面包屑与「上一级」（根目录上移）、多选（Ctrl/Shift）、右键菜单、复制/剪切/粘贴/删除/重命名/新建/导入导出；**Windows 下支持盘符切换**（工具栏下拉选 `C:`/`D:`/… 即可浏览其它盘）。文件双击预览。
 - **编辑与预览**：图片 / HTML（沙箱 iframe）/ PDF / Markdown（预览↔编辑，Ctrl/Cmd+S 保存）/ 代码高亮编辑；图片/PDF 可滚轮缩放。**图片扩展预览**（浏览器无法直接渲染的格式，按需懒加载解码库）：TIFF（[UTIF.js](https://github.com/photopea/UTIF.js)）、HEIC/HEIF（[heic2any](https://github.com/alexcorvi/heic2any)，内置 wasm 离线可用）、PSD/PSB（[ag-psd](https://github.com/Agamnentzar/ag-psd)，合并图层预览），`.jfif/.pjpeg` 等 JPEG 变体也已加入白名单。**Office 预览**（只读，按需懒加载开源库）：Word（`.docx`，[docx-preview](https://github.com/VolodymyrBaydalka/docxjs)）、Excel（`.xlsx/.xls`，[SheetJS](https://github.com/SheetJS/sheetjs)）、CSV/TSV（内置解析表格，自动 UTF-8/GBK 识别）、PPT（`.pptx`，[pptx-preview](https://github.com/501351981/pptx-preview)，已预打包）。所有 Office 预览提供**工具栏**：缩小/放大（40%–250%）、适应宽度，以及各类型专属**显示方式**——Word「分页/文本」、Excel「表格/原始(TSV)」、CSV「表格/原始文本」、PPT「幻灯/列表」。
 - **内嵌浏览器**：沙箱 iframe 网页浏览 tab（多开、后退/前进/刷新、可临时解锁）。
 - **真实终端**：xterm.js + node-pty + WebSocket（Windows 自动用 `cmd.exe`/`powershell.exe`；cwd 缺省回落）。
@@ -135,6 +135,8 @@ dsh-center-workbench/
 ## 更新记录
 
 > **给维护者**：发布 Release 时，除 `dsh-center-workbench-<版本>.tgz` 外，请再上传一份固定名资产 `dsh-center-workbench-latest.tgz`（内容相同），保证首页「一条命令安装最新 Release」的 `releases/latest/download/` 链接始终指向最新的包。
+
+- **v0.3.3**：**资源管理器改为 VS Code 风格目录树**——文件夹带 ▸/▾ 箭头：**单击文件夹行 = 进入该文件夹**，**单击 ▸ 箭头 = 原地展开/收起**（懒加载 + 目录缓存，已加载目录 2.5s 轮询自动刷新外部变更）；多级缩进显示层级；文件双击预览；右键菜单 / Ctrl 多选 / 键盘快捷键 / 拖拽导入 / 面包屑 / 盘符切换 / 上一级全部保留；「活动目录」（最后点击的文件夹或其父级）作为粘贴与新建/导入目标。
 
 - **v0.3.2**：**Office 预览**——Word（`.docx`，[docx-preview](https://github.com/VolodymyrBaydalka/docxjs)）、Excel（`.xlsx/.xls`，[SheetJS](https://github.com/SheetJS/sheetjs)）、CSV/TSV（内置解析表格，UTF-8/GBK 自动识别）、PPT（`.pptx`，[pptx-preview](https://github.com/501351981/pptx-preview) 已预打包）；预览提供**工具栏**（缩小/放大 40%–250%、适应宽度随面板实时变化）与**显示方式**（Word 分页/文本、Excel 表格/原始、CSV 表格/原始、PPT 幻灯/列表，PPT 默认列表多页平铺）；**图片扩展预览**——TIFF（[UTIF.js](https://github.com/photopea/UTIF.js)）、HEIC/HEIF（[heic2any](https://github.com/alexcorvi/heic2any)，内置 wasm 离线可用）、PSD/PSB（[ag-psd](https://github.com/Agamnentzar/ag-psd)，合成图层预览），`.jfif/.pjpeg` 加入图片白名单；**Excel/CSV 表头吸顶修复**（根因：表头背景用了半透明 token，滚动内容透出，已改为不透明背景）；**Office 图标区分**（Word 蓝 W、Excel 绿 X、PPT 橙红 P，仿 GitHub/VS Code 式样）。
 
