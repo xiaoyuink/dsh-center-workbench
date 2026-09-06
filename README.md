@@ -16,8 +16,9 @@
 - **资源管理器**：**VS Code 风格目录树**——文件夹带 ▸/▾ 箭头：**单击文件夹行 = 进入该文件夹**，**单击 ▸ 箭头 = 原地展开/收起**（懒加载 + 已加载目录轮询刷新）、层级缩进、面包屑与「上一级」（根目录上移）、多选（Ctrl/Shift）、右键菜单、复制/剪切/粘贴/删除/重命名/新建/导入导出；**Windows 下支持盘符切换**（工具栏下拉选 `C:`/`D:`/… 即可浏览其它盘）。文件双击预览。
 - **编辑与预览**：图片 / HTML（沙箱 iframe）/ PDF / Markdown（预览↔编辑，Ctrl/Cmd+S 保存）/ 代码高亮编辑；图片/PDF 可滚轮缩放。**图片扩展预览**（浏览器无法直接渲染的格式，按需懒加载解码库）：TIFF（[UTIF.js](https://github.com/photopea/UTIF.js)）、HEIC/HEIF（[heic2any](https://github.com/alexcorvi/heic2any)，内置 wasm 离线可用）、PSD/PSB（[ag-psd](https://github.com/Agamnentzar/ag-psd)，合并图层预览），`.jfif/.pjpeg` 等 JPEG 变体也已加入白名单。**Office 预览**（只读，按需懒加载开源库）：Word（`.docx`，[docx-preview](https://github.com/VolodymyrBaydalka/docxjs)）、Excel（`.xlsx/.xls`，[SheetJS](https://github.com/SheetJS/sheetjs)）、CSV/TSV（内置解析表格，自动 UTF-8/GBK 识别）、PPT（`.pptx`，[pptx-preview](https://github.com/501351981/pptx-preview)，已预打包）。所有 Office 预览提供**工具栏**：缩小/放大（40%–250%）、适应宽度，以及各类型专属**显示方式**——Word「分页/文本」、Excel「表格/原始(TSV)」、CSV「表格/原始文本」、PPT「幻灯/列表」。
 - **内嵌浏览器**：沙箱 iframe 网页浏览 tab（多开、后退/前进/刷新、可临时解锁）。
+- **SSH(ssh-ops) 嵌入**：检测到宿主安装了 [dsh-ssh-ops](https://github.com/caoyiwei850/dsh-ssh-ops) 时，在标签页末尾自动追加「**SSH**」卡片——打开后将 ssh-ops 的右侧悬浮面板**直接钉在中部栏标签区域显示**（无需先在侧边栏出现；不搬移 DOM，通过 CSS 定点覆盖实现，可反复开关、随面板尺寸自适应），离开该标签页时面板回到右侧原位并复位开合状态。
 - **真实终端**：xterm.js + node-pty + WebSocket（Windows 自动用 `cmd.exe`/`powershell.exe`；cwd 缺省回落）。
-- **后台任务**：子代理拓扑树 + 后台任务列表、输出重放（**不碰模型的 `job_output` 游标**）、两击确认强杀。
+- **后台任务**：子代理拓扑树 + 后台任务列表、输出重放（**不碰模型的 `job_output` 游标**）、两击确认强杀。拓扑为**目录化 lazy 渲染**（消费宿主 `subagentsByParent` seam：子代理展示模式一次性/可持续、运行状态、损坏/不支持/不可用诊断行、加载占位与错误重试、当前会话高亮、连接线缩进、**键盘导航（↑/↓/Home/End）与「刷新」按钮**；无 seam 的旧宿主自动退化为 byId 镜像树）；任务列表**仅对 running 显示终止钮**、已结束行淡化、终止失败行内提示、输出面板带状态点；运行中卡片无输出时显示「思考中…」；「后台任务」标签页显示**运行中任务数角标**。
 - **文件互通**：从 Windows 资源管理器**拖入**文件/文件夹（文件夹保留子目录结构）、`Ctrl+V` 粘贴文件；右键「**导入文件夹…** / **导入文件…**」弹出系统选择器，选好即导入当前目录（文件夹保留子目录结构）；右键「导出到 Windows 文件夹…」写进系统文件夹选择器选的目录。
 - **中部栏开关**：放进侧边栏导航（生图插件按钮下方），宽度与标签顺序持久化。
 - **会话隔离**：面板状态随会话/工作区动态锚定，标签宽度与顺序本地持久化。
@@ -135,6 +136,8 @@ dsh-center-workbench/
 ## 更新记录
 
 > **给维护者**：发布 Release 时，除 `dsh-center-workbench-<版本>.tgz` 外，请再上传一份固定名资产 `dsh-center-workbench-latest.tgz`（内容相同），保证首页「一条命令安装最新 Release」的 `releases/latest/download/` 链接始终指向最新的包。
+
+- **v0.3.5**：**嵌入 dsh-ssh-ops 的 SSH 面板**——宿主安装 [dsh-ssh-ops](https://github.com/caoyiwei850/dsh-ssh-ops) 时自动追加「**SSH**」标签页：打开后将 ssh-ops 右侧悬浮面板**直接钉在中部栏标签区域显示**（CSS 定点覆盖 + 抬升 shell.overlay 层级，不搬移 DOM；面板隐藏待钉、钉后即现，无侧边栏闪现；可反复开关、尺寸随面板自适应），再次切换离开标签页时面板复位右侧原位并还原开合状态。
 
 - **v0.3.4**：**修复树形资源管理器 Shift 多选**——恢复「Shift + 单击」区间选择：在锚点与点击项之间按可见行顺序（含展开目录的子树项）连续选中；锚点保持不变、支持反向区间；锚点不可见时回退普通选择。
 
