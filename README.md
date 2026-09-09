@@ -18,7 +18,7 @@
 - **内嵌浏览器**：沙箱 iframe 网页浏览 tab（多开、后退/前进/刷新、可临时解锁）。
 - **SSH(ssh-ops) 嵌入**：检测到宿主安装了 [dsh-ssh-ops](https://github.com/caoyiwei850/dsh-ssh-ops) 时，在标签页末尾自动追加「**SSH**」卡片——打开后将 ssh-ops 的右侧悬浮面板**直接钉在中部栏标签区域显示**（无需先在侧边栏出现；不搬移 DOM，通过 CSS 定点覆盖实现，可反复开关、随面板尺寸自适应），离开该标签页时面板回到右侧原位并复位开合状态。
 - **真实终端**：xterm.js + node-pty + WebSocket（Windows 自动用 `cmd.exe`/`powershell.exe`；cwd 缺省回落）。
-- **后台任务**：子代理拓扑树 + 后台任务列表、输出重放（**不碰模型的 `job_output` 游标**）、两击确认强杀。拓扑为**目录化 lazy 渲染**（消费宿主 `subagentsByParent` seam：子代理展示模式一次性/可持续、运行状态、损坏/不支持/不可用诊断行、加载占位与错误重试、当前会话高亮、连接线缩进、**键盘导航（↑/↓/Home/End）与「刷新」按钮**；无 seam 的旧宿主自动退化为 byId 镜像树）；任务列表**仅对 running 显示终止钮**、已结束行淡化、终止失败行内提示、输出面板带状态点；运行中卡片无输出时显示「思考中…」；「后台任务」标签页显示**运行中任务数角标**。
+- **后台任务**：子代理拓扑树 + 后台任务列表、输出重放（**不碰模型的 `job_output` 游标**）、两击确认强杀；**新子代理 / 新任务出现时自动切到本页**（500ms 去抖，宽屏顺带展开中部栏，窄屏只准备标签页；页头可一键关闭自动弹出）；**输出面板 sticky 底部停靠**（终端式，列表滚动时常驻）。拓扑为**目录化 lazy 渲染**（消费宿主 `subagentsByParent` seam：子代理展示模式一次性/可续接、运行状态、目录损坏/不支持的条目/不可用诊断行、加载占位与错误重试、当前会话高亮、连接线缩进、**键盘导航（↑/↓/Home/End）与「刷新」按钮**；无 seam 的旧宿主自动退化为 byId 镜像树）；任务列表**仅对 running 显示终止钮**、已结束行淡化、终止失败行内提示、输出面板带状态点；运行中卡片无输出时显示「思考中…」；「后台任务」标签页显示**运行中任务数角标**。
 - **文件互通**：从 Windows 资源管理器**拖入**文件/文件夹（文件夹保留子目录结构）、`Ctrl+V` 粘贴文件；右键「**导入文件夹…** / **导入文件…**」弹出系统选择器，选好即导入当前目录（文件夹保留子目录结构）；右键「导出到 Windows 文件夹…」写进系统文件夹选择器选的目录。
 - **中部栏开关**：放进侧边栏导航（生图插件按钮下方），宽度与标签顺序持久化。
 - **会话隔离**：面板状态随会话/工作区动态锚定，标签宽度与顺序本地持久化。
@@ -136,6 +136,8 @@ dsh-center-workbench/
 ## 更新记录
 
 > **给维护者**：发布 Release 时，除 `dsh-center-workbench-<版本>.tgz` 外，请再上传一份固定名资产 `dsh-center-workbench-latest.tgz`（内容相同），保证首页「一条命令安装最新 Release」的 `releases/latest/download/` 链接始终指向最新的包。
+
+- **v0.3.6**：**后台任务页补齐 better-sidebar 行为**——①**自动激活**：新子代理（0 → N，500ms 去抖后按原基线重评估，避免 Side Chat 线程首帧误判）或**新任务**（任意新 id）出现时自动切到「后台任务」页；中部栏已关闭时宽屏自动展开、窄屏只准备标签页不强行盖住对话区，页头「自动弹出：开/关」可随时关闭（本地持久化，对齐 better-sidebar 的 autoOpenSubagent / autoOpenJobs，默认开）。②**修复点击子代理卡片无反应**：openSubagent 必须带 catalog 的 mode（selectSubagent 用 entry.mode !== address.mode 校验，缺 mode 直接抛错）；catalog 行自带 mode，无 catalog 的旧宿主回退到 subagentAddress() 解析。③**输出面板改为 sticky 底部停靠**（终端式，列表滚动时面板常驻底部）。④任务行对齐：kind 变描边徽标、命令用等宽字体、已结束行淡化 0.8、终止按钮改为方形停止图标 + 两击确认变红色确认片，补 aria-pressed / title / aria-label。⑤**修复「拓扑一直加载中」**：观察 effect 原先用 `hasCatalogs` 做门——而第一个 catalog 正是由该 effect 请求的，于是「没人请求 → `subagentsByParent` 永远为空 → 门永远关着」形成死锁；同时 `branches` 身份随每次会话列表快照变化，cleanup 里的 `unobserveAll()` 会造成「释放→重开」抖振，每次重开都触发 `refreshSubagents`，而它又 notify → effect 再跑 → **无限请求循环**，catalog 被反复重置为 loading（有子代理也永远加载不出来）。现改为 better-sidebar 同款结构：根观察 effect 只依赖 `rootId/active`（去掉 hasCatalogs 门），分支观察只增不减、无 cleanup，卸载时统一释放。
 
 - **v0.3.5**：**嵌入 dsh-ssh-ops 的 SSH 面板**——宿主安装 [dsh-ssh-ops](https://github.com/caoyiwei850/dsh-ssh-ops) 时自动追加「**SSH**」标签页：打开后将 ssh-ops 右侧悬浮面板**直接钉在中部栏标签区域显示**（CSS 定点覆盖 + 抬升 shell.overlay 层级，不搬移 DOM；面板隐藏待钉、钉后即现，无侧边栏闪现；可反复开关、尺寸随面板自适应），再次切换离开标签页时面板复位右侧原位并还原开合状态。
 
