@@ -1,157 +1,256 @@
-# dsh-center-workbench
+# dsh-workbench
 
 <p align="center">
-  <b>一个插件，一套中部栏工作台</b><br /><br />
-  <code>文件管理</code> <code>预览/编辑</code> <code>内嵌浏览器</code> <code>真实终端</code> <code>后台任务</code><br /><br />
-  <b>窗口正中央</b>的文件浏览工作台，把对话栏向右推开，形成 <code>[左侧栏 | 中部栏 | 对话栏]</code> 三段式。
+  <b>把资源管理器 / 终端 / 浏览器 / 后台任务，装进 DSH 的侧边栏</b><br /><br />
+  <code>文件管理</code> <code>预览 / 编辑</code> <code>内嵌浏览器</code> <code>真实终端</code> <code>后台任务</code><br />
+  <code>Office 预览</code> <code>TIFF / HEIC / PSD</code> <code>跨平台</code>
 </p>
 
-核心思想：**一个独立的「中部栏」，不依赖、不改动 `dsh-better-sidebar`**。在 DSH 窗口中央渲染一个完整工作台，覆盖文件浏览、预览编辑、浏览器、真实终端与后台任务监控；同时针对 **Windows / Linux / macOS** 三平台做了适配。
+一个 [DSH（DeepSeek Harness）](https://github.com/deepseek-ai/deepseek-harness) Web 插件：把 **资源管理器、内嵌浏览器、真实终端、后台任务** 注册成 **DSH 官方右侧 Sidebar 的标签页**——和官方自带的「工作区文件」、[dsh-ssh-ops](https://github.com/caoyiwei850/dsh-ssh-ops) 的「SSH 终端」并列，各自还带一张 guide 入口卡片（侧边栏「开始」页上的那张卡片）。双击文件会在侧边栏**新开一个文件预览标签**。
 
-> **🧬 谁适合装**
-> 想要一个「常驻中央」的文件工作台、又不想被 DSH 自带侧边栏左右布局束缚的用户；以及需要在 DSH 里直接浏览/编辑/预览文件、开终端、看后台任务的研究者与开发者。
+宿主没有官方侧边栏服务（旧 DSH）时**自动回退**到自带的「中部栏」三段式面板：窗口正中渲染工作台、把对话栏向右推开。两种形态共用同一套正文组件与宿主路由，功能一致，只是外壳不同。
 
-## 功能总览
+> **谁适合装**
+> 想在 DSH 里边聊边翻代码、改文件、开终端、看子代理与后台任务的人；需要预览 docx / xlsx / pptx / TIFF / HEIC / PSD 这类浏览器默认打不开的文件的人；以及本机 Windows + WSL 双环境来回倒文件的人。
 
-- **资源管理器**：**VS Code 风格目录树**——文件夹带 ▸/▾ 箭头：**单击文件夹行 = 进入该文件夹**，**单击 ▸ 箭头 = 原地展开/收起**（懒加载 + 已加载目录轮询刷新）、层级缩进、面包屑与「上一级」（根目录上移）、多选（Ctrl/Shift）、右键菜单、复制/剪切/粘贴/删除/重命名/新建/导入导出；**Windows 下支持盘符切换**（工具栏下拉选 `C:`/`D:`/… 即可浏览其它盘）。文件双击预览。
-- **编辑与预览**：图片 / HTML（沙箱 iframe）/ PDF / Markdown（预览↔编辑，Ctrl/Cmd+S 保存）/ 代码高亮编辑；图片/PDF 可滚轮缩放。**图片扩展预览**（浏览器无法直接渲染的格式，按需懒加载解码库）：TIFF（[UTIF.js](https://github.com/photopea/UTIF.js)）、HEIC/HEIF（[heic2any](https://github.com/alexcorvi/heic2any)，内置 wasm 离线可用）、PSD/PSB（[ag-psd](https://github.com/Agamnentzar/ag-psd)，合并图层预览），`.jfif/.pjpeg` 等 JPEG 变体也已加入白名单。**Office 预览**（只读，按需懒加载开源库）：Word（`.docx`，[docx-preview](https://github.com/VolodymyrBaydalka/docxjs)）、Excel（`.xlsx/.xls`，[SheetJS](https://github.com/SheetJS/sheetjs)）、CSV/TSV（内置解析表格，自动 UTF-8/GBK 识别）、PPT（`.pptx`，[pptx-preview](https://github.com/501351981/pptx-preview)，已预打包）。所有 Office 预览提供**工具栏**：缩小/放大（40%–250%）、适应宽度，以及各类型专属**显示方式**——Word「分页/文本」、Excel「表格/原始(TSV)」、CSV「表格/原始文本」、PPT「幻灯/列表」。
-- **内嵌浏览器**：沙箱 iframe 网页浏览 tab（多开、后退/前进/刷新、可临时解锁）。
-- **SSH(ssh-ops) 嵌入**：检测到宿主安装了 [dsh-ssh-ops](https://github.com/caoyiwei850/dsh-ssh-ops) 时，在标签页末尾自动追加「**SSH**」卡片——打开后将 ssh-ops 的右侧悬浮面板**直接钉在中部栏标签区域显示**（无需先在侧边栏出现；不搬移 DOM，通过 CSS 定点覆盖实现，可反复开关、随面板尺寸自适应），离开该标签页时面板回到右侧原位并复位开合状态。
-- **真实终端**：xterm.js + node-pty + WebSocket（Windows 自动用 `cmd.exe`/`powershell.exe`；cwd 缺省回落）。
-- **后台任务**：子代理拓扑树 + 后台任务列表、输出重放（**不碰模型的 `job_output` 游标**）、两击确认强杀；**新子代理 / 新任务出现时自动切到本页**（500ms 去抖，宽屏顺带展开中部栏，窄屏只准备标签页；页头可一键关闭自动弹出）；**输出面板 sticky 底部停靠**（终端式，列表滚动时常驻）。拓扑为**目录化 lazy 渲染**（消费宿主 `subagentsByParent` seam：子代理展示模式一次性/可续接、运行状态、目录损坏/不支持的条目/不可用诊断行、加载占位与错误重试、当前会话高亮、连接线缩进、**键盘导航（↑/↓/Home/End）与「刷新」按钮**；无 seam 的旧宿主自动退化为 byId 镜像树）；任务列表**仅对 running 显示终止钮**、已结束行淡化、终止失败行内提示、输出面板带状态点；运行中卡片无输出时显示「思考中…」；「后台任务」标签页显示**运行中任务数角标**。
-- **文件互通**：从 Windows 资源管理器**拖入**文件/文件夹（文件夹保留子目录结构）、`Ctrl+V` 粘贴文件；右键「**导入文件夹…** / **导入文件…**」弹出系统选择器，选好即导入当前目录（文件夹保留子目录结构）；右键「导出到 Windows 文件夹…」写进系统文件夹选择器选的目录。
-- **中部栏开关**：放进侧边栏导航（生图插件按钮下方），宽度与标签顺序持久化。
-- **会话隔离**：面板状态随会话/工作区动态锚定，标签宽度与顺序本地持久化。
+---
 
-## 快速上手
+## 目录
 
-### 安装插件
+- [功能](#功能)
+- [两种呈现形态](#两种呈现形态)
+- [安装](#安装)
+- [使用](#使用)
+- [侧边栏集成细节](#侧边栏集成细节)
+- [平台支持](#平台支持)
+- [HTTP 路由](#http-路由)
+- [目录结构](#目录结构)
+- [开发](#开发)
+- [更新记录](#更新记录)
+- [License](#license)
 
-**方式一：一条命令安装最新 Release（推荐，无需源码/依赖，始终最新版）**
+---
+
+## 功能
+
+### 资源管理器
+
+- **VS Code 风格目录树**：文件夹带 `▸ / ▾` 箭头——**单击文件夹行 = 进入该文件夹**，**单击 `▸` = 原地展开/收起**（懒加载 + 已加载目录轮询刷新外部变更），层级缩进、面包屑与「上一级」。
+- **多选与右键菜单**：Ctrl 点选、Shift 区间选（锚点可反向）；复制 / 剪切 / 粘贴 / 删除 / 重命名 / 新建目录 / 新建文件 / 复制路径 / 在预览中打开 / 用官方预览打开 / 导入 / 导出。
+- **键盘快捷键**：`Ctrl+C` / `Ctrl+X` / `Ctrl+V` / `Delete`（只在资源管理器内部生效，不抢对话栏的复制粘贴）。
+- **文件互通**：从系统资源管理器**拖入**文件或文件夹（保留子目录结构）、`Ctrl+V` 粘贴文件；右键「**导入文件夹… / 导入文件…**」弹系统选择器，选好即导入当前目录；「**导出到文件夹…**」写进系统选择的目录。导入 / 导出 / 删除都有**进度条**。
+- **Windows 盘符切换**：工具栏下拉直接选 `C:` / `D:` / …。
+- **类型着色图标**：仿 VS Code / GitHub 的描边图标，文件夹琥珀色，编程语言按 Linguist 配色；Word 蓝 W、Excel 绿 X、PPT 橙红 P。
+
+### 预览与编辑
+
+双击文件 = 在侧边栏**新开一个以文件名命名的预览标签**（每个文件一个标签，可同时开着多个；同一个文件重复双击只聚焦）。标签内：
+
+| 类型 | 行为 |
+| --- | --- |
+| 文本 / 代码 / Markdown | **默认编辑态**，可「预览 ↔ 编辑」、`Ctrl/Cmd+S` 或「保存」写盘，关闭时若有未保存改动会先问一句 |
+| 图片（png/jpg/gif/webp/svg/bmp/ico/avif/jfif…） | 只读，滚轮缩放、适应窗口 |
+| PDF | 只读，内嵌 iframe，滚轮缩放 |
+| HTML | 只读，沙箱 iframe 渲染 |
+| **Word**（`.docx`） | [docx-preview](https://github.com/VolodymyrBaydalka/docxjs)，支持「分页 / 文本」两种显示方式 |
+| **Excel**（`.xlsx/.xls`） | [SheetJS](https://github.com/SheetJS/sheetjs)，支持「表格 / 原始(TSV)」，表头吸顶 |
+| **CSV / TSV** | 内置解析，自动识别 UTF-8 / GBK，支持「表格 / 原始文本」 |
+| **PPT**（`.pptx`） | [pptx-preview](https://github.com/501351981/pptx-preview)（已预打包），支持「幻灯 / 列表」 |
+| **TIFF** | [UTIF.js](https://github.com/photopea/UTIF.js) 解码预览 |
+| **HEIC / HEIF** | [heic2any](https://github.com/alexcorvi/heic2any)，内置 wasm，离线可用 |
+| **PSD / PSB** | [ag-psd](https://github.com/Agamnentzar/ag-psd)，预览合并图层 |
+
+Office / PDF / 图片预览统一带**工具栏**：缩小 / 放大（40%–250%）、适应宽度（随面板尺寸实时跟随）。所有解码库都是**按需懒加载**，不拖慢首屏。
+
+**预览内容不重复加载**：切标签回来不发第二次请求——文本与原始字节都按路径缓存在客户端；图片与 PDF 走浏览器原生缓存（宿主 `/media` 带 ETag，未修改时只回一个不带 body 的 304）。
+
+### 内嵌浏览器
+
+沙箱 iframe 网页浏览标签：地址栏、前进 / 后退 / 刷新、多开、可临时解锁限制。
+
+### 真实终端
+
+[xterm.js](https://xtermjs.org/) + `node-pty` + WebSocket 的真实 pty：切标签 / 收起侧边栏不会重启终端，回来看得到完整回滚缓冲。主题跟随 DSH 明暗方案，内置 one-dark / one-light ANSI 调色板。
+
+### 后台任务
+
+- **子代理拓扑树**：消费宿主 `subagentsByParent` seam，目录化懒渲染——子代理展示模式（一次性 / 可续接）、运行状态、目录损坏与不支持的条目诊断、加载占位与错误重试、当前会话高亮、连接线缩进、键盘导航（`↑`/`↓`/`Home`/`End`）与「刷新」。
+- **后台任务列表**：仅运行中的任务显示终止按钮（两击确认），已结束行淡化；输出面板**终端式 sticky 底部停靠**，重放**不碰模型的 `job_output` 游标**。
+- **自动激活**：「新子代理」或「新任务」出现时自动切到后台任务标签（500ms 去抖），页头可一键关掉；运行中任务数显示为标签角标。
+- 点卡片可直接跳进子代理会话（带 `mode`，一次性 / 可续接都正确）。
+
+---
+
+## 两种呈现形态
+
+| 形态 | 触发条件 | 表现 |
+| --- | --- | --- |
+| **官方侧边栏标签**（推荐） | 宿主提供 `sidebarRightTabs` / `sidebarRight`（DSH ≥ 0.1.5-rc.1） | 四个功能成为官方右侧 Sidebar 的标签页 + guide 入口卡片；宽度、分栏、全屏、折叠全部由官方 Sidebar 掌管。会话头部另有一个「工作台」按钮，一键展开并聚焦资源管理器 |
+| **中部栏**（兼容回退） | 宿主没有上述服务（旧 DSH） | 窗口正中渲染面板并把对话栏向右推开；侧边栏导航里的「中部栏」开关控制开合，宽度与标签顺序持久化 |
+
+判定是**窗口重试**式的：拿不到服务就每 150ms 重试，最多 20 次（约 3 秒）——各客户端插件装配有先后，服务可能晚一步才到；整个窗口内都拿不到才回退中部栏，并记录一条 `console.error`，不会留下半截界面。
+
+---
+
+## 安装
+
+### 方式一：一条命令装最新 Release（推荐）
 
 ```bash
-dsh plugin --profile web add https://github.com/xiaoyuink/dsh-center-workbench/releases/latest/download/dsh-center-workbench-latest.tgz
+dsh plugin --profile web add https://github.com/xiaoyuink/dsh-workbench/releases/latest/download/dsh-workbench-latest.tgz
 ```
 
-> 上面的 URL **永远指向最新版本**（GitHub `/releases/latest/` 自动重定向到最新 Release 的资产），无需改版本号。若想装指定版本，把 `latest` 换成版本号即可：
-> `.../releases/download/v0.2.0/dsh-center-workbench-0.2.0.tgz`
-
-**方式二：GitHub 仓库开发模式（`link:`，适合二次开发）**
+上面的 URL 永远指向最新 Release（`/releases/latest/` 会自动重定向），不用改版本号。装指定版本就把 `latest` 换成版本号：
 
 ```bash
-# 建议在 ~/.dsh 下新建 plugin 目录，统一存放插件本体
-mkdir -p ~/.dsh/plugin
-cd ~/.dsh/plugin
+dsh plugin --profile web add https://github.com/xiaoyuink/dsh-workbench/releases/download/v0.4.5/dsh-workbench-0.4.5.tgz
+```
 
-git clone https://github.com/xiaoyuink/dsh-center-workbench.git
-cd dsh-center-workbench
-pnpm install          # 安装插件自身依赖（node-pty / xterm / ws）
+### 方式二：开发模式（`link:`）
 
-# 用 DSH CLI 注册（link: 协议，代码改动重启即生效）
+```bash
+mkdir -p ~/.dsh/plugin && cd ~/.dsh/plugin
+git clone https://github.com/xiaoyuink/dsh-workbench.git
+cd dsh-workbench
+pnpm install                 # node-pty / xterm / ws / Office 预览库
 dsh plugin --profile web add "$(pwd)"
 ```
 
-> **💡 存放位置**：开发模式建议放在 `~/.dsh/plugin/` 统一管理；`dsh plugin add` 指向该目录路径即可，位置任意。
+> **存放位置**：开发模式建议统一放 `~/.dsh/plugin/`；`dsh plugin add` 指向该目录即可，位置任意。
 
-安装后**重启 `dsh web`**（宿主在启动时加载插件），浏览器 `Ctrl+Shift+R` 硬刷新。
+### 装完
 
-### 使用
+1. **重启 `dsh web`**（宿主在启动时加载插件），
+2. 浏览器 `Ctrl+Shift+R` 硬刷新（客户端 bundle 会热重载，但硬刷新最省事）。
 
-1. 点击侧边栏导航里的「中部栏」（在生图插件按钮下方）打开中部栏。
-2. 顶部标签：**资源管理器 / 浏览器 / 终端 / 后台任务**，可拖动排序（位置记住）。
-3. 资源管理器里双击文件即预览/编辑；右键可复制/剪切/粘贴/删除/重命名/新建/导出。
-4. 从 Windows 资源管理器把文件/文件夹**拖入**资源管理器列表即导入（文件夹保留结构）；右键 →「导出到 Windows 文件夹…」可把文件/目录写进系统选择的目录；右键 →「**导入文件夹… / 导入文件…**」会弹出系统选择器，选好即导入当前目录（无需再输入路径）。
+---
 
-## 平台支持（Windows / Linux / macOS）
+## 使用
 
-本插件已针对三平台适配：
+1. 点侧边栏「开始」页上的 **资源管理器** 卡片（或会话头部的「工作台」按钮），右侧栏就打开工作台标签。
+2. 标签条上的 **+** 可以再开其他工作台标签（浏览器 / 终端 / 后台任务）；标签可拖动排序、可拆分栏、可全屏。
+3. 资源管理器里**双击文件** → 新开一个预览标签；双击目录行进入该目录，点 `▸` 原地展开。
+4. 拖文件进资源管理器 = 导入；右键「导出到文件夹…」= 导出。
 
-- **终端**：Windows 下自动改用 `cmd.exe`/`powershell.exe`（读取 `%COMSPEC%`），不再依赖 `/bin/bash` 与 `-l` 参数；cwd 缺省回落到用户主目录（`os.homedir()`），并做存在性校验、多级兜底。
-- **路径**：文件浏览器对 Windows 盘符路径（`C:\Users\...`）做反斜杠归一化，向上 / 文件基名 / 新建 / 重命名等操作正常；盘符根（`C:`）可经工具栏下拉切换。
-- **默认目录**：会话 cwd 缺失时回落到宿主用户主目录，不再写死 `/home/sya`。
+---
 
-## Windows 注意事项
+## 侧边栏集成细节
 
-- **node-pty（原生模块）**：安装时若没有匹配的 Windows 预编译二进制，会回退到 `node-gyp` 编译，需要 **Visual Studio Build Tools（含 C++）+ Python**。若编译失败，安装这两项后重装即可（`pnpm install --force` 或重装依赖）。
-- **终端**：Windows 下默认 `cmd.exe`；想用 PowerShell 可在 `lib/index.js` 的终端 route 把默认壳改为 `powershell.exe`。Shell 工具链由 DSH 宿主决定。
-- **「导出到 Windows 文件夹…」**：依赖浏览器 File System Access API，仅支持 Chrome / Edge（需安全上下文，本机 `127.0.0.1`/localhost 可用）。不支持 Firefox。
-- **粘贴（Ctrl+V）导入文件**：跨浏览器不稳定（`clipboardData.files` 行为各异）；**拖入**是最可靠的导入方式。
-- **「导入文件夹… / 导入文件…」**：依赖浏览器 File System Access API（`showDirectoryPicker` / `showOpenFilePicker`），仅支持 Chrome / Edge（需安全上下文，本机 `127.0.0.1`/localhost 可用）。走浏览器端内容流式上传（与拖放同路径）：文件夹递归枚举后按相对路径重建子目录结构。
-- **图片扩展预览**（TIFF/HEIC/PSD，只读）：解码库按需懒加载。已知限制：超大 TIFF 解码较慢且占用内存（转为 dataURL 供预览）；PSD 预览的是**合并图层**后的合成图像；HEIC 转换依赖 Web Worker（需安全上下文，本机 `127.0.0.1`/localhost 可用），首次转换稍慢；不支持带密码/损坏的图片。
-- **Office 预览**（Word/Excel/CSV/PPT，只读）：库在首次预览时由宿主动态提供、浏览器按需懒加载，不拖慢首屏。**打开默认「适应宽度」**（Word/PPT 按面板宽度自动测算，Excel/CSV 表格 100% 适应；面板尺寸变化时实时跟随），工具栏可放大/缩小（40%–250%）；**PPT 默认列表模式**（解除库默认固定高度，让多页平铺、缩小后一屏可见多页，可切换单页幻灯）；**Excel/CSV 表格表头吸顶**（滚动时表头固定；之前「表头跟着动」的根因是表头背景用了半透明 token，已改为不透明背景，缩放仍用 CSS zoom）。已知限制：docx 渲染受宿主字体影响；pptx 预览图表类元素（echarts 渲染的图表）支持仍不完整；Excel 仅预览内容，不执行宏；CSV 自动识别 UTF-8/GBK 编码。pptx 预览库（[pptx-preview](https://github.com/501351981/pptx-preview)）已用 esbuild 预打包为 `lib/vendor/pptx-preview.bundle.js`（内含 echarts/lodash/jszip 等依赖），如需升级该库，请重打包该文件。
+- **五个标签类型**（注册 id 都是 `dsh-workbench/<name>`，优先级 `extension`）：
+
+  | kind | 说明 | guide 卡片 |
+  | --- | --- | --- |
+  | `dsh-workbench-explorer` | 资源管理器（文件树） | ✅ 资源管理器 |
+  | `dsh-workbench-browser` | 内嵌浏览器 | ✅ 浏览器 |
+  | `dsh-workbench-terminal` | 真实终端 | ✅ 终端 |
+  | `dsh-workbench-tasks` | 后台任务 | ✅ 后台任务 |
+  | `dsh-workbench-preview` | 文件预览（双击文件时出现，不在 guide 页上） | — |
+
+- **预览标签的资源地址**：`dsh-resource://workbench-preview/<encodeURIComponent(绝对路径)>`，文件路径同时放在导航参数 `params.path` 里；地址即 `contentId`，所以同一个文件重复打开只会聚焦已有标签。用绝对路径，所以工作区之外的文件也能预览。
+- **宿主服务依赖**：只用公开的 `ctx.slots` / `ctx.get("sidebarRightTabs")` / `ctx.get("sidebarRight")`；**不依赖、也不修改** `dsh-better-sidebar` 或 `dsh-ssh-ops`。SSH 有自己的标签，互不干扰。
+- **会话头部按钮**：注册在 `conversation.session.header.actions`（order 91），点一下 = 展开侧边栏 + 聚焦资源管理器；`sidebarRight.openTab` 本身幂等，不会开出第二个。
+
+---
+
+## 平台支持
+
+针对 **Windows / Linux / macOS** 三平台适配：
+
+- **终端**：Windows 下自动改用 `cmd.exe` / `powershell.exe`（读 `%COMSPEC%`），不依赖 `/bin/bash` 与 `-l`；cwd 缺省回落到用户主目录并做存在性校验。
+- **路径**：Windows 盘符路径（`C:\Users\...`）做反斜杠归一化；盘符根可通过工具栏下拉切换。
+- **默认目录**：会话 cwd 缺失时回落到宿主用户主目录（由宿主 `/env` 提供），不写死路径。
+
+### Windows 注意事项
+
+- **node-pty 是原生模块**：没有匹配的预编译二进制时会回退 `node-gyp` 编译，需要 Visual Studio Build Tools（含 C++）+ Python。
+- **系统选择器**（导入文件夹 / 导入文件 / 导出到文件夹）依赖 File System Access API，**仅 Chrome / Edge**（需安全上下文，本机 `127.0.0.1` 可用），Firefox 不支持；跨浏览器最可靠的导入方式是**拖放**。
+- **HEIC 转换**依赖 Web Worker（需安全上下文），首次转换稍慢；超大 TIFF 解码较慢且吃内存。
+- **Office 预览**是只读的，不执行宏；docx 渲染效果受宿主字体影响；pptx 里 echarts 类图表支持不完整。
+
+---
 
 ## HTTP 路由
 
+宿主半提供的路由（全部挂在 `/api/dsh-workbench/` 下）：
+
 | 方法 | 路径 | 用途 |
 | --- | --- | --- |
-| GET | `/api/dsh-center-workbench/tree` | 列出目录条目 |
-| GET | `/api/dsh-center-workbench/file` | 读取文本文件（预览/编辑） |
-| POST | `/api/dsh-center-workbench/file/save` | 写回文本文件 |
-| POST | `/api/dsh-center-workbench/file/upload` | 外部文件导入（拖放/粘贴；自动建父目录） |
-| POST | `/api/dsh-center-workbench/file/op` | 复制 / 移动（含目录，含自/后代守卫） |
-| POST | `/api/dsh-center-workbench/file/del` | 删除文件/目录 |
-| POST | `/api/dsh-center-workbench/file/create` | 新建目录/文件 |
-| GET | `/api/dsh-center-workbench/tree/recursive` | 递归列出目录（相对路径，导出用） |
-| GET | `/api/dsh-center-workbench/env` | 环境信息（主目录 / 平台 / 分隔符） |
-| GET | `/api/dsh-center-workbench/drives` | Windows 盘符列表（盘符切换） |
-| GET | `/api/dsh-center-workbench/media` | 原生字节预览（图片 / PDF / HTML 等） |
-| GET | `/api/dsh-center-workbench/tasks/live` | 运行中子代理实时活动（后台任务页） |
-| POST | `/api/dsh-center-workbench/tasks/output` | 重放模型已读的任务输出（不碰 `job_output` 游标） |
-| POST | `/api/dsh-center-workbench/tasks/kill` | 终止后台任务 |
-| GET | `/api/dsh-center-workbench/terminal` | WebSocket 升级 → 真实终端（node-pty） |
-| GET | `/api/dsh-center-workbench/xterm.js` | xterm UMD（宿主动态提供） |
-| GET | `/api/dsh-center-workbench/addon-fit.js` | xterm fit 插件 |
-| GET | `/api/dsh-center-workbench/vendor/jszip.js` | JSZip UMD（docx-preview 依赖） |
-| GET | `/api/dsh-center-workbench/vendor/docx-preview.js` | docx-preview UMD（Word 预览） |
-| GET | `/api/dsh-center-workbench/vendor/xlsx.js` | SheetJS UMD（Excel 预览） |
-| GET | `/api/dsh-center-workbench/vendor/pptx-preview.js` | pptx-preview 预打包 IIFE（PPT 预览） |
-| GET | `/api/dsh-center-workbench/vendor/pako.js` | pako UMD（UTIF.js 依赖） |
-| GET | `/api/dsh-center-workbench/vendor/utif.js` | UTIF.js UMD（TIFF 预览） |
-| GET | `/api/dsh-center-workbench/vendor/heic2any.js` | heic2any（HEIC 预览，内置 wasm） |
-| GET | `/api/dsh-center-workbench/vendor/ag-psd.js` | ag-psd UMD bundle（PSD 预览） |
+| GET | `/tree` | 列出目录条目 |
+| GET | `/file` | 读取文本文件（预览 / 编辑） |
+| POST | `/file/save` | 写回文本文件 |
+| POST | `/file/upload` | 外部文件导入（拖放 / 粘贴，自动建父目录） |
+| POST | `/file/op` | 复制 / 移动（含目录，带自/后代守卫） |
+| POST | `/file/del` | 删除文件 / 目录 |
+| POST | `/file/create` | 新建目录 / 文件 |
+| GET | `/tree/recursive` | 递归列出目录（相对路径，导出用） |
+| GET | `/env` | 环境信息（主目录 / 平台 / 分隔符） |
+| GET | `/drives` | Windows 盘符列表 |
+| GET | `/media` | 原生字节预览（图片 / PDF / HTML 等；带 ETag，未修改回 304） |
+| GET | `/tasks/live` | 运行中子代理实时活动 |
+| POST | `/tasks/output` | 重放模型已读的任务输出（不碰 `job_output` 游标） |
+| POST | `/tasks/kill` | 终止后台任务 |
+| GET | `/terminal` | WebSocket 升级 → 真实终端（node-pty） |
+| GET | `/xterm.js`、`/addon-fit.js`、`/xterm.css` | xterm 运行时（宿主动态提供） |
+| GET | `/vendor/*.js` | 预览解码库 UMD：`jszip` `docx-preview` `xlsx` `pptx-preview` `pako` `utif` `heic2any` `ag-psd` |
+| POST | `/diag` | 客户端装配诊断信标（追加写 `~/.dsh/dsh-workbench/diag.jsonl`） |
 
-## 安装方式（README 速查）
-
-```bash
-# 一条命令装最新（推荐）
-dsh plugin --profile web add https://github.com/xiaoyuink/dsh-center-workbench/releases/latest/download/dsh-center-workbench-latest.tgz
-
-# 开发模式（link:）
-git clone https://github.com/xiaoyuink/dsh-center-workbench.git && cd dsh-center-workbench && pnpm install
-dsh plugin --profile web add "$(pwd)"
-```
+---
 
 ## 目录结构
 
 ```
-dsh-center-workbench/
-├── package.json          # 声明 dsh.bundle.patch + dsh.client + peerDeps
+dsh-workbench/
+├── package.json          # dsh.bundle.patch + dsh.client + peerDeps
 ├── cordis.patch.yml      # insert 插件行（挂载 bundle）
 ├── README.md
+├── scripts/
+│   └── smoke-sidebar.cjs # jsdom 回归测试（标签注册 / 正文挂载 / 预览缓存 / 回退）
 └── lib/
-    ├── index.js          # host 半：/api/dsh-center-workbench/* 路由 + 终端(pty) + 后台任务
-    └── client.js         # client 半：手写 __ModuleLoader__ bundle（中部栏 + 资源管理器 + 终端 + 后台任务）
+    ├── index.js          # 宿主半：/api/dsh-workbench/* 路由 + 终端(pty) + 后台任务
+    └── client.js         # 客户端半：__ModuleLoader__ bundle（侧边栏标签 + 中部栏回退 + 正文组件）
 ```
+
+---
+
+## 开发
+
+```bash
+# 回归测试（需要 jsdom；JSDOM_PATH 指向任意装好 jsdom 的 node_modules）
+pnpm add -D jsdom
+JSDOM_PATH=./node_modules/jsdom node scripts/smoke-sidebar.cjs
+```
+
+`scripts/smoke-sidebar.cjs` 用 jsdom 复刻客户端环境，断言：五个标签类型注册正确（kind / id / 优先级 / guide 卡片 / 预览类型的地址模式与标题）、每个正文都能挂载渲染、会话头部按钮点击会开聚焦、双击文件发出的正是预览资源地址、预览正文能读 `tabInfo` 并渲染内容、**重挂载不重读文件**、宿主没有侧边栏服务时回退中部栏。
+
+改了客户端 `lib/client.js` 后，DSH 的 `client-hmr` 会重载 bundle 并重跑 `apply()`（幂等，不会重复注册）；改了宿主 `lib/index.js` 或新增路由则需要重启 `dsh web`。
+
+发布 Release 时，除 `dsh-workbench-<版本>.tgz` 外请再上传一份固定名资产 **`dsh-workbench-latest.tgz`**（内容相同），这样 README 里「一条命令装最新」的 `releases/latest/download/` 链接永远有效。
+
+---
 
 ## 更新记录
 
-> **给维护者**：发布 Release 时，除 `dsh-center-workbench-<版本>.tgz` 外，请再上传一份固定名资产 `dsh-center-workbench-latest.tgz`（内容相同），保证首页「一条命令安装最新 Release」的 `releases/latest/download/` 链接始终指向最新的包。
+### v0.4.x — 融入官方侧边栏
 
-- **v0.3.6**：**后台任务页补齐 better-sidebar 行为**——①**自动激活**：新子代理（0 → N，500ms 去抖后按原基线重评估，避免 Side Chat 线程首帧误判）或**新任务**（任意新 id）出现时自动切到「后台任务」页；中部栏已关闭时宽屏自动展开、窄屏只准备标签页不强行盖住对话区，页头「自动弹出：开/关」可随时关闭（本地持久化，对齐 better-sidebar 的 autoOpenSubagent / autoOpenJobs，默认开）。②**修复点击子代理卡片无反应**：openSubagent 必须带 catalog 的 mode（selectSubagent 用 entry.mode !== address.mode 校验，缺 mode 直接抛错）；catalog 行自带 mode，无 catalog 的旧宿主回退到 subagentAddress() 解析。③**输出面板改为 sticky 底部停靠**（终端式，列表滚动时面板常驻底部）。④任务行对齐：kind 变描边徽标、命令用等宽字体、已结束行淡化 0.8、终止按钮改为方形停止图标 + 两击确认变红色确认片，补 aria-pressed / title / aria-label。⑤**修复「拓扑一直加载中」**：观察 effect 原先用 `hasCatalogs` 做门——而第一个 catalog 正是由该 effect 请求的，于是「没人请求 → `subagentsByParent` 永远为空 → 门永远关着」形成死锁；同时 `branches` 身份随每次会话列表快照变化，cleanup 里的 `unobserveAll()` 会造成「释放→重开」抖振，每次重开都触发 `refreshSubagents`，而它又 notify → effect 再跑 → **无限请求循环**，catalog 被反复重置为 loading（有子代理也永远加载不出来）。现改为 better-sidebar 同款结构：根观察 effect 只依赖 `rootId/active`（去掉 hasCatalogs 门），分支观察只增不减、无 cleanup，卸载时统一释放。
+- **v0.4.5**：`/media` 缓存头收紧为 `max-age=0, must-revalidate`（保留 ETag）——图片 / PDF 每次显示只发一个条件请求，未修改就回 **304（不带 body）**，字节不重传、磁盘不重读，文件改了立刻是新内容，没有陈旧窗口。
+- **v0.4.4**：**预览不再每次切换都重新加载**——客户端新增按路径的预览缓存（文本内容 + 原始字节，64 MiB 上限按插入序淘汰），保存 / 复制 / 移动 / 重命名 / 删除会让对应路径失效；宿主 `/media` 补 ETag 与条件请求。
+- **v0.4.3**：修复预览标签显示「没有可预览的文件」——官方侧边栏把 tab 信息钩子作为**直接 prop `useTabInfo`** 交给正文（同官方 `FilesBody`），此前误读 `props.hooks.tabInfo` 导致拿不到标签地址。
+- **v0.4.2**：**文件预览改成官方侧边栏标签**（每个文件一个，同一个文件重复双击只聚焦）——新增 `dsh-workbench-preview` 类型，地址 `dsh-resource://workbench-preview/…`；删除浮窗实现。
+- **v0.4.1**：资源管理器预览改为标签内浮窗（v0.4.2 已被标签方案取代）；guide 卡片名定为「资源管理器」；新增右键「用官方预览打开」；侧边栏服务探测改为窗口重试 + 幂等。
+- **v0.4.0**：**融入官方右侧 Sidebar**——检测到 `sidebarRightTabs` / `sidebarRight` 就把四个功能注册成官方标签并各带 guide 卡片，会话头部加「工作台」按钮；宿主没有这些服务时自动回退原中部栏三段式。
 
-- **v0.3.5**：**嵌入 dsh-ssh-ops 的 SSH 面板**——宿主安装 [dsh-ssh-ops](https://github.com/caoyiwei850/dsh-ssh-ops) 时自动追加「**SSH**」标签页：打开后将 ssh-ops 右侧悬浮面板**直接钉在中部栏标签区域显示**（CSS 定点覆盖 + 抬升 shell.overlay 层级，不搬移 DOM；面板隐藏待钉、钉后即现，无侧边栏闪现；可反复开关、尺寸随面板自适应），再次切换离开标签页时面板复位右侧原位并还原开合状态。
+### v0.3.x — 中部栏时代
 
-- **v0.3.4**：**修复树形资源管理器 Shift 多选**——恢复「Shift + 单击」区间选择：在锚点与点击项之间按可见行顺序（含展开目录的子树项）连续选中；锚点保持不变、支持反向区间；锚点不可见时回退普通选择。
+- **v0.3.6**：后台任务页对齐 `dsh-better-sidebar`——自动激活（新子代理 / 新任务）、修复点子代理卡片无反应（缺 `mode`）、输出面板改 sticky 底部停靠、修复「拓扑一直加载中」的死锁与无限刷新循环。
+- **v0.3.5**：嵌入 `dsh-ssh-ops` 的 SSH 悬浮面板（该插件自带官方侧边栏标签后已不需要）。
+- **v0.3.4**：修复树形资源管理器 Shift 区间多选。
+- **v0.3.3**：资源管理器改为 VS Code 风格目录树（`▸/▾`、懒加载、目录缓存轮询刷新）。
+- **v0.3.2**：Office 预览（Word / Excel / CSV / PPT）+ 扩展图片预览（TIFF / HEIC / PSD）+ 预览工具栏。
+- **v0.3.1**：文件图标按类型着色（仿 VS Code / GitHub）。
+- **v0.3.0**：系统选择器导入 / 导出 + 进度条 + 多选与复制修复。
+- **v0.2.0**：更名并加入后台任务页、文件互通（拖放 / 粘贴 / 导出）、Windows 适配、标签顺序与宽度持久化。
 
-- **v0.3.3**：**资源管理器改为 VS Code 风格目录树**——文件夹带 ▸/▾ 箭头：**单击文件夹行 = 进入该文件夹**，**单击 ▸ 箭头 = 原地展开/收起**（懒加载 + 目录缓存，已加载目录 2.5s 轮询自动刷新外部变更）；多级缩进显示层级；文件双击预览；右键菜单 / Ctrl 多选 / 键盘快捷键 / 拖拽导入 / 面包屑 / 盘符切换 / 上一级全部保留；「活动目录」（最后点击的文件夹或其父级）作为粘贴与新建/导入目标。
-
-- **v0.3.2**：**Office 预览**——Word（`.docx`，[docx-preview](https://github.com/VolodymyrBaydalka/docxjs)）、Excel（`.xlsx/.xls`，[SheetJS](https://github.com/SheetJS/sheetjs)）、CSV/TSV（内置解析表格，UTF-8/GBK 自动识别）、PPT（`.pptx`，[pptx-preview](https://github.com/501351981/pptx-preview) 已预打包）；预览提供**工具栏**（缩小/放大 40%–250%、适应宽度随面板实时变化）与**显示方式**（Word 分页/文本、Excel 表格/原始、CSV 表格/原始、PPT 幻灯/列表，PPT 默认列表多页平铺）；**图片扩展预览**——TIFF（[UTIF.js](https://github.com/photopea/UTIF.js)）、HEIC/HEIF（[heic2any](https://github.com/alexcorvi/heic2any)，内置 wasm 离线可用）、PSD/PSB（[ag-psd](https://github.com/Agamnentzar/ag-psd)，合成图层预览），`.jfif/.pjpeg` 加入图片白名单；**Excel/CSV 表头吸顶修复**（根因：表头背景用了半透明 token，滚动内容透出，已改为不透明背景）；**Office 图标区分**（Word 蓝 W、Excel 绿 X、PPT 橙红 P，仿 GitHub/VS Code 式样）。
-
-- **v0.3.1**：**文件图标美化**——资源管理器图标从单一灰色文件夹/文件升级为**按类型着色的描边式图标**（参考 VS Code / GitHub 网页文件浏览器）：文件夹琥珀色；图片/PDF/Markdown/压缩包/表格/数据库/终端等各有专属形状（相框、书签、文档、纸箱、网格、圆柱、终端窗）；编程语言按 GitHub Linguist 配色区分（js 黄、ts 蓝、py、html 橙、css 紫、json 青、cpp 粉、go 青蓝…）。标签页与侧边栏「中部栏」图标统一为同款描边风格，「浏览器（地球）」标签图标简化为简洁轮廓。
-
-- **v0.3.0**：**文件互通升级**——右键新增「**导入文件夹… / 导入文件…**」，点击直接弹出**系统文件/文件夹选择器**（File System Access API）选好即导入，替代原先「从路径导入」手输路径的方式；**导入/导出/删除全部新增进度条**（导入按文件计数、导出按文件计数、删除多项按计数、单项大文件夹用不定长动画），进度条**宽度固定**不再随文件路径长短抖动；**多选后右键不再取消多选**，右键「复制/剪切/删除」作用于整个选区；**修复 DSH 对话栏 Ctrl+C 无法复制文字**（键盘/粘贴快捷键范围限定在插件资源管理器内部）；取消右键空白区域时误复制自身目录（空白右键默认清空选中并禁用复制/剪切/删除）。
-
-- **v0.2.0**：更名为 `dsh-center-workbench`；新增**后台任务页**（子代理拓扑 + 后台任务列表 / 输出重放 / 两击强杀，不碰模型 `job_output` 游标）；新增**文件互通**（Windows 拖放/粘贴导入、导出到 Windows 文件夹）；新增**Windows 适配**（终端跨平台壳、盘符切换、路径归一化、默认目录跨平台）；标签顺序与宽度持久化；顶栏去除「中部栏」文字。
+---
 
 ## License
 

@@ -1,7 +1,15 @@
-# dsh-center-workbench bundle patch: mount the plugin row.
-# This plugin is standalone: it renders its own centered file-browse panel
-# and provides the '/api/dsh-center-workbench/*' HTTP routes through the host
-# half. It does NOT depend on or modify dsh-better-sidebar.
+# dsh-workbench bundle patch：把插件行挂进 profile
+#
+# 插件是自包含的：宿主半提供 '/api/dsh-workbench/*' 路由（文件读写 / 原生字节预览 /
+# 终端 pty / 后台任务），客户端半把「资源管理器 / 浏览器 / 终端 / 后台任务」注册成
+# DSH 官方右侧 Sidebar 的标签页（宿主没有 sidebarRightTabs / sidebarRight 时自动
+# 回退到自带的「中部栏」三段式面板）。
+#
+# 只依赖 DSH 公开的 slots / sidebarRightTabs / sidebarRight 服务，不依赖、也不修改
+# dsh-better-sidebar 或 dsh-ssh-ops。
+#
+# 可用 config.shell / config.shellArgs 指定终端壳（省略时宿主自动解析 $SHELL /
+# 登录壳 / Windows 的 powershell.exe）。
 - insert:
-    - id: dsh-center-workbench
-      name: 'dsh-center-workbench'
+    - id: dsh-workbench
+      name: 'dsh-workbench'
