@@ -8,8 +8,8 @@
  * with react-dom/server to prove each one renders without throwing.
  */
 const path = require('path');
-const PLUGIN = '/home/sya/.dsh/plugin/dsh-workbench';
-const { JSDOM } = require(process.env.JSDOM_PATH || '/tmp/cw-smoke/node_modules/jsdom');
+const PLUGIN = path.resolve(__dirname, '..'); // 测试始终针对本仓库里的 lib/client.js
+const { JSDOM } = require(process.env.JSDOM_PATH || 'jsdom');
 
 const html = '<!doctype html><html><body>' +
   '<div data-pane="sidebar"><div class="logoRow"><button class="newSessionBtn">新建会话</button></div><nav></nav></div>' +
@@ -309,6 +309,64 @@ function assert(cond, msg) {
     assert(fetchCalls.filter((u) => u.indexOf('/media?') >= 0).length === mediaBefore, 'no media request for a text preview');
   } catch (e) {
     assert(false, 'preview cache test threw: ' + (e && e.message));
+  }
+
+
+  console.log('== preview tab keeps its rendered tree across tab switches ==');
+  try {
+    const previewBody = registeredSlots.find((s) => s.opts.key === 'dsh-workbench/preview');
+    const P1 = '/home/sya/project/workbench插件/src/一.md';
+    const P2 = '/home/sya/project/workbench插件/src/二.md';
+    const infos = {};
+    const tabInfoFor = (tabId, filePath) => {
+      infos[tabId] = infos[tabId] || (() => ({
+        sidebar: { expanded: true, fullscreen: false }, panel: { id: 'pane-1' },
+        tab: { id: tabId, kind: 'dsh-workbench-preview',
+          navigation: { address: 'dsh-resource://workbench-preview/' + encodeURIComponent(filePath), params: { path: filePath }, revision: 1 },
+          visible: true, actions: { close() {}, openResource() {}, openTab() {} } },
+      }));
+      return infos[tabId];
+    };
+
+    // 外壳（标签正文）在 React 里重新渲染时，返回的必须还是同一个元素对象——
+    // React 据此复用已有的组件实例（不重新挂载、不重新解码）。
+    const memoRefs = [];
+    const Probe = () => {
+      const el = previewBody.Comp(Object.assign({ useTabInfo: tabInfoFor('tab-x', P1) }, previewBody.opts.inject()));
+      memoRefs.push(el); // 这里是外壳刚返回的元素（React 还没渲染它）
+      return el;
+    };
+    const hostP = document.createElement('div'); document.body.appendChild(hostP);
+    const rootP = createRoot(hostP);
+    let forceProbe = () => {};
+    const Rerenderable = () => {
+      const [, force] = React.useState(0);
+      forceProbe = () => force((n) => n + 1);
+      return React.createElement(Probe, {});
+    };
+    await act(async () => { rootP.render(React.createElement(Rerenderable, {})); });
+    await act(async () => { forceProbe(); });
+    assert(memoRefs.length >= 2 && memoRefs[0] === memoRefs[memoRefs.length - 1],
+      'the shell hands React the same element object on every render (renders=' + memoRefs.length + ')');
+    await act(async () => { rootP.unmount(); });
+    hostP.remove();
+
+    // 不同标签各有各的缓存元素
+    const memoY = [];
+    const memoX = [];
+    const Probe2 = () => {
+      memoY.push(previewBody.Comp(Object.assign({ useTabInfo: tabInfoFor('tab-y', P2) }, previewBody.opts.inject())));
+      memoX.push(previewBody.Comp(Object.assign({ useTabInfo: tabInfoFor('tab-x', P1) }, previewBody.opts.inject())));
+      return React.createElement(React.Fragment, null, memoX[memoX.length - 1], memoY[memoY.length - 1]);
+    };
+    const hostQ = document.createElement('div'); document.body.appendChild(hostQ);
+    const rootQ = createRoot(hostQ);
+    await act(async () => { rootQ.render(React.createElement(Probe2, {})); });
+    assert(memoX[0] !== memoY[0], 'a different tab gets its own cached element');
+    await act(async () => { rootQ.unmount(); });
+    hostQ.remove();
+  } catch (e) {
+    assert(false, 'element-cache test threw: ' + (e && e.message));
   }
 
   console.log('== sidebar services arrive late (probe retry, no fallback) ==');

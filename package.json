@@ -1,6 +1,6 @@
 {
   "name": "dsh-workbench",
-  "version": "0.4.5",
+  "version": "0.4.6",
   "description": "DSH web 插件：优先把「资源管理器 / 浏览器 / 终端 / 后台任务」注册成官方右侧 Sidebar 的标签页（与「工作区文件」「SSH 终端」并列，各带 guide 入口卡片与会话头部「工作台」按钮）；宿主没有 sidebarRightTabs / sidebarRight（旧 DSH）时自动回退到原「中部栏」三段式面板。",
   "type": "module",
   "main": "./lib/index.js",
@@ -38,15 +38,15 @@
   "dependencies": {
     "@xterm/addon-fit": "^0.11.0",
     "@xterm/xterm": "^5.5.0",
-    "node-pty": "^1.1.0",
-    "ws": "^8.18.0",
+    "ag-psd": "^31.0.2",
     "docx-preview": "^0.4.0",
-    "jszip": "^3.10.1",
-    "xlsx": "^0.18.5",
-    "utif": "^3.1.0",
-    "pako": "^1.0.11",
     "heic2any": "^0.0.4",
-    "ag-psd": "^31.0.2"
+    "jszip": "^3.10.1",
+    "node-pty": "^1.1.0",
+    "pako": "^1.0.11",
+    "utif": "^3.1.0",
+    "ws": "^8.18.0",
+    "xlsx": "^0.18.5"
   },
   "license": "MIT",
   "repository": {
@@ -67,5 +67,8 @@
     "xterm",
     "sidebar",
     "office-preview"
-  ]
+  ],
+  "devDependencies": {
+    "jsdom": "^30.0.1"
+  }
 }
