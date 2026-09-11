@@ -109,10 +109,15 @@ function fakeTabs() {
 }
 const sidebarRightCalls = [];
 const openResourceCalls = [];
+const expandCalls = [];
+const sidebarRightState = { expanded: false, activeKind: undefined };
 const sidebarRight = {
   openTab(kind, options) { sidebarRightCalls.push({ kind, options }); },
-  openResource(address, options) { openResourceCalls.push({ address, options }); }, close() {}, active() { return undefined; }, isExpanded() { return false; },
-  toggleExpanded() {}, focus() {}, split() { return undefined; }, float() {}, dock() {},
+  openResource(address, options) { openResourceCalls.push({ address, options }); }, close() {},
+  active() { return sidebarRightState.activeKind === undefined ? undefined : { kind: sidebarRightState.activeKind, id: 'tab-1' }; },
+  isExpanded() { return sidebarRightState.expanded; },
+  toggleExpanded() { expandCalls.push(sidebarRightState.expanded ? 'collapse' : 'expand'); sidebarRightState.expanded = !sidebarRightState.expanded; },
+  focus() {}, split() { return undefined; }, float() {}, dock() {},
 };
 const ctx = {
   get(n) {
@@ -187,9 +192,28 @@ function assert(cond, msg) {
     await act(async () => { root2.render(React.createElement(header.Comp, {})); });
     const button = host2.querySelector('[data-dsh-cw-header-action]');
     assert(button !== null, 'header button carries data-dsh-cw-header-action');
+    assert(button.getAttribute('aria-pressed') === 'false' && button.title.indexOf('打开工作台') >= 0,
+      'collapsed state: aria-pressed=false and the tooltip says 打开工作台');
     await act(async () => { button.dispatchEvent(new w.MouseEvent('click', { bubbles: true })); });
     assert(sidebarRightCalls.length === 1 && sidebarRightCalls[0].kind === 'dsh-workbench-explorer',
-      'clicking opens/focuses the explorer tab (got ' + JSON.stringify(sidebarRightCalls) + ')');
+      'click #1 opens/focuses the explorer tab (got ' + JSON.stringify(sidebarRightCalls) + ')');
+    assert(expandCalls.length === 0, 'click #1 does not touch the column state directly');
+
+    // 侧边栏已展开且活动标签是工作台的（资源管理器）→ 再点一下应收起
+    await act(async () => { sidebarRightState.expanded = true; sidebarRightState.activeKind = 'dsh-workbench-explorer'; });
+    await act(async () => { await new Promise((r) => setTimeout(r, 1100)); }); // 等一次状态轮询
+    assert(button.getAttribute('aria-pressed') === 'true' && button.title.indexOf('关闭工作台') >= 0,
+      'open state: aria-pressed=true and the tooltip says 关闭工作台');
+    await act(async () => { button.dispatchEvent(new w.MouseEvent('click', { bubbles: true })); });
+    assert(expandCalls.length === 1 && expandCalls[0] === 'collapse',
+      'click #2 closes the workbench (toggleExpanded) instead of reopening (got ' + JSON.stringify(expandCalls) + ')');
+    assert(sidebarRightCalls.length === 1, 'click #2 does not open another tab');
+
+    // 已展开但活动标签不是工作台（比如官方 Files）→ 应聚焦回工作台而不是收起
+    sidebarRightState.expanded = true; sidebarRightState.activeKind = 'files';
+    await act(async () => { button.dispatchEvent(new w.MouseEvent('click', { bubbles: true })); });
+    assert(sidebarRightCalls.length === 2 && expandCalls.length === 1,
+      'another tab active: the button focuses the workbench instead of collapsing');
     await act(async () => { root2.unmount(); });
     host2.remove();
   } catch (e) {
